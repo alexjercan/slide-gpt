@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "slide-gpt"
+version = "0.1.0"
+description = "CLI tool for generating slides from text using ChatGPT and DALL-E"
+authors = ["Alex Jercan <jercan_alex27@yahoo.com>"]
+readme = "README.md"
+packages = [{include = "slide_gpt"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+openai = "^0.27.8"
+fakeyou = "^1.2.5"
+ffmpeg-python = "^0.2.0"
+tqdm = "^4.66.1"
+mypy = "^1.5.1"
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.12.0"
+black = "^23.7.0"
+pylint = "^2.17.5"
+
+[tool.poetry.scripts]
+slide-gpt = "slide_gpt.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 79
