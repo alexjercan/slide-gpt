@@ -26,5 +26,7 @@ jobs:
       uses: abatilo/actions-poetry@v2
       with:
         poetry-version: "1.5.1"
+    - name: Install Requirements
+      run: poetry install
     - name: Lint Source Code
       run: make lint
