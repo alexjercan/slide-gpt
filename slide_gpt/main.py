@@ -9,7 +9,7 @@ import sys
 import urllib.request
 import wave
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 import fakeyou
 import ffmpeg
@@ -69,6 +69,7 @@ VOICES = FK.list_voices()
 class Args:
     """Arguments for the pipeline"""
 
+    model: str
     prompt: str
     speaker: str
     output: str
@@ -84,6 +85,13 @@ def parse_args() -> Args:
     """
     parser = argparse.ArgumentParser(
         description="Create a video from a slide presentation"
+    )
+    parser.add_argument(
+        "--model",
+        help="The openai model to use for generating the slides",
+        default="gpt-3.5-turbo",
+        choices=["gpt-3.5-turbo", "gpt-4"],
+        required=False,
     )
     parser.add_argument(
         "--speaker",
@@ -105,7 +113,7 @@ def parse_args() -> Args:
     speaker = get_voices().get(args.speaker, SPEAKER)
     prompt = sys.stdin.read()
 
-    return Args(prompt, speaker, args.output)
+    return Args(args.model, prompt, speaker, args.output)
 
 
 def get_output_run(output: str) -> Tuple[str, str]:
@@ -146,11 +154,7 @@ def get_voices() -> Dict[str, str]:
 
 
 def create_slides(
-    system: str,
-    prompt: str,
-    speaker: str,
-    output: str,
-    api_key: Optional[str] = None,
+    model: str, system: str, prompt: str, speaker: str, output: str
 ):
     """Create the slides for the presentation
 
@@ -160,6 +164,8 @@ def create_slides(
 
     Parameters
     ----------
+    model : str
+        The openai model to use for generating the slides
     system : str
         The system prompt to use for the presentation
     prompt : str
@@ -168,8 +174,6 @@ def create_slides(
         The speaker to use for the presentation
     output : str
         The output directory to use for the files
-    api_key : Optional[str], optional
-        The OpenAI API key to use for the requests
     """
     logging.info("Creating slides...")
 
@@ -179,7 +183,7 @@ def create_slides(
         file.write(prompt)
 
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model=model,
         messages=[
             {
                 "role": "system",
@@ -187,7 +191,6 @@ def create_slides(
             },
             {"role": "user", "content": prompt},
         ],
-        api_key=api_key,
     )
 
     presentation = json.loads(response.choices[0].message.content)
@@ -204,10 +207,7 @@ def create_slides(
             )
 
             response = openai.Image.create(
-                prompt=slide["image"],
-                n=1,
-                size="1024x1024",
-                api_key=api_key,
+                prompt=slide["image"], n=1, size="1024x1024"
             )
             image_url = response["data"][0]["url"]
 
@@ -399,15 +399,13 @@ def create_video(output: str):
     ).overwrite_output().run()
 
 
-def pipeline(args: Args, api_key: Optional[str] = None) -> str:
+def pipeline(args: Args) -> str:
     """Run the pipeline
 
     Parameters
     ----------
     args : Args
         The arguments for the pipeline
-    api_key : Optional[str], optional
-        The OpenAI API key to use, by default None
 
     Returns
     -------
@@ -416,11 +414,12 @@ def pipeline(args: Args, api_key: Optional[str] = None) -> str:
     """
     logging.info("Running pipeline with args: %s", args)
 
+    model = args.model
     prompt = args.prompt
     speaker = args.speaker
     output, run = get_output_run(args.output)
 
-    create_slides(SYSTEM, prompt, speaker, output, api_key)
+    create_slides(model, SYSTEM, prompt, speaker, output)
     create_vtt(output)
     create_srt(output)
     create_video(output)
