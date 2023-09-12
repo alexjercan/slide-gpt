@@ -7,6 +7,7 @@ import logging
 import os
 import sys
 import urllib.request
+import wave
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
@@ -223,6 +224,75 @@ def create_slides(
             progress.update(1)
 
 
+def seconds_to_hh_mm_ss_mmm(seconds: float) -> str:
+    """Convert seconds to HH:MM:SS.mmm format
+
+    Parameters
+    ----------
+    seconds : float
+        The seconds to convert
+
+    Returns
+    -------
+    str
+        The seconds in HH:MM:SS.mmm format
+    """
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    r_seconds = int(seconds % 60)
+    milliseconds = int((seconds - int(seconds)) * 1000)
+
+    result = f"{hours:02d}:{minutes:02d}:{r_seconds:02d},{milliseconds:03d}"
+
+    return result
+
+
+def create_srt(output: str):
+    """Create the SRT file for the presentation
+
+    The SRT file will be saved in the output directory as `presentation.srt`.
+    The timing for each slide will be based on the `.wav` length.
+
+    Parameters
+    ----------
+    output : str
+        The output directory to use for the files
+    """
+    logging.info("Creating srt...")
+
+    audio_files = sorted(glob.glob(os.path.join(output, "slide_*.wav")))
+
+    with open(
+        os.path.join(output, "presentation.json"), "r", encoding="utf-8"
+    ) as file:
+        presentation = json.load(file)
+
+    with open(
+        os.path.join(output, "presentation.srt"), "w", encoding="utf-8"
+    ) as file:
+        current_s = 0
+
+        for index, (slide, audio_file) in enumerate(
+            zip(presentation, audio_files)
+        ):
+            with open(audio_file, "rb") as audio_f:
+                audio = wave.open(audio_f)
+                duration = audio.getnframes() / audio.getframerate()
+
+            start = current_s
+            end = current_s + duration
+
+            start_fmt = seconds_to_hh_mm_ss_mmm(start)
+            end_fmt = seconds_to_hh_mm_ss_mmm(end)
+
+            file.write(f"{index + 1}\n")
+            file.write(f"{start_fmt} --> {end_fmt}\n")
+            file.write(f"{slide['text']}\n")
+            file.write("\n")
+
+            current_s = end
+
+
 def create_video(output: str):
     """Create the video from the slides
 
@@ -255,7 +325,7 @@ def create_video(output: str):
     ffmpeg.concat(*input_streams, v=1, a=1).output(
         os.path.join(output, "video.mp4"),
         pix_fmt="yuv420p",
-    ).run()
+    ).overwrite_output().run()
 
 
 def pipeline(args: Args, api_key: Optional[str] = None) -> str:
@@ -280,6 +350,7 @@ def pipeline(args: Args, api_key: Optional[str] = None) -> str:
     output, run = get_output_run(args.output)
 
     create_slides(SYSTEM, prompt, speaker, output, api_key)
+    create_srt(output)
     create_video(output)
 
     return run
