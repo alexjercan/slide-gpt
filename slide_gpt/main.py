@@ -250,7 +250,7 @@ def srt_seconds_to_hh_mm_ss_mmm(seconds: float) -> str:
 def create_srt(output: str):
     """Create the SRT file for the presentation
 
-    The SRT file will be saved in the output directory as `presentation.srt`.
+    The SRT file will be saved in the output directory as `video.srt`.
     The timing for each slide will be based on the `.wav` length.
 
     Parameters
@@ -268,7 +268,7 @@ def create_srt(output: str):
         presentation = json.load(file)
 
     with open(
-        os.path.join(output, "presentation.srt"), "w", encoding="utf-8"
+        os.path.join(output, "video.srt"), "w", encoding="utf-8"
     ) as file:
         current_s = 0
 
@@ -319,7 +319,7 @@ def vtt_seconds_to_hh_mm_ss_mmm(seconds: float) -> str:
 def create_vtt(output: str):
     """Create the VTT file for the presentation
 
-    The SRT file will be saved in the output directory as `presentation.vtt`.
+    The SRT file will be saved in the output directory as `video.vtt`.
     The timing for each slide will be based on the `.wav` length.
 
     Parameters
@@ -337,7 +337,7 @@ def create_vtt(output: str):
         presentation = json.load(file)
 
     with open(
-        os.path.join(output, "presentation.vtt"), "w", encoding="utf-8"
+        os.path.join(output, "video.vtt"), "w", encoding="utf-8"
     ) as file:
         current_s = 0
 
