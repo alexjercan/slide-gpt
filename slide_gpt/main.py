@@ -17,6 +17,20 @@ from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO)
 
+FK = fakeyou.FakeYou()
+
+try:
+    FK.login(
+        username=os.environ["FAKEYOU_USERNAME"],
+        password=os.environ["FAKEYOU_PASSWORD"],
+    )
+except KeyError:
+    logging.warning("No login credentials found for FakeYou")
+except fakeyou.exception.InvalidCredentials:
+    logging.warning("Invalid login credentials for FakeYou")
+except fakeyou.exception.TooManyRequests:
+    logging.warning("Too many requests for FakeYou")
+
 SYSTEM = """Your job is to create a slide presentation for a video. \
 In this presentation you must include a speech for the current slide and a \
 description for the background image. You need to make it as story-like as \
@@ -47,7 +61,7 @@ something like:
 Make sure to output only JSON text. Do not output any extra comments.
 """
 SPEAKER = "TM:cpwrmn5kwh97"
-VOICES = fakeyou.FakeYou().list_voices()
+VOICES = FK.list_voices()
 
 
 @dataclass
@@ -73,7 +87,7 @@ def parse_args() -> Args:
     parser.add_argument(
         "--speaker",
         help="The speaker title to use for the presentation",
-        default="Morgan Freeman",
+        default="Morgan Freeman (New)",
         required=False,
     )
     parser.add_argument(
@@ -204,7 +218,7 @@ def create_slides(
             )
 
             path = os.path.join(output, f"slide_{index}.wav")
-            fakeyou.FakeYou().say(slide["text"], speaker).save(path)
+            FK.say(slide["text"], speaker).save(path)
 
             progress.update(1)
 
