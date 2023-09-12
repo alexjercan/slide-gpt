@@ -16,8 +16,11 @@ sure to export your api key.
 sudo apt install ffmpeg
 curl -sSL https://install.python-poetry.org | python3 -
 export OPENAI_API_KEY=sk-...
+export FAKEYOU_USERNAME=...
+export FAKEYOU_PASSWORD=...
 poetry install
 echo "Please create a presentation about sunflowers." | poetry run slide-gpt
+mpv videos/0/video.mp4
 ```
 
 You can also change the speaker of the video using the `--speaker` flag with a
