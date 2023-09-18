@@ -133,7 +133,7 @@ def get_output_run(output: str) -> Tuple[str, str]:
     if not os.path.exists(output):
         os.mkdir(output)
 
-    run = 0
+    run = 2
     while os.path.exists(os.path.join(output, str(run))):
         run += 1
 
@@ -251,6 +251,9 @@ def srt_seconds_to_hh_mm_ss_mmm(seconds: float) -> str:
 def numerical_sort(filename: str) -> str | int:
     """Sort the filenames numerically
 
+    The filename is of the form "slide_*.wav" where * is a number. This
+    function will extract the number from the filename and use it for sorting.
+
     Parameters
     ----------
     filename : str
@@ -261,9 +264,10 @@ def numerical_sort(filename: str) -> str | int:
     str | int
         The filename as a number if it contains a number, otherwise the filename
     """
-    match = re.search(r"\d+", filename)
+    match = re.search(r"slide_(\d+).*", filename)
+
     if match:
-        return int(match.group())
+        return int(match.group(1))
 
     return filename
 
@@ -352,7 +356,9 @@ def create_vtt(output: str):
     """
     logging.info("Creating vtt...")
 
-    audio_files = sorted(glob.glob(os.path.join(output, "slide_*.wav")))
+    audio_files = sorted(
+        glob.glob(os.path.join(output, "slide_*.wav")), key=numerical_sort
+    )
 
     with open(
         os.path.join(output, "presentation.json"), "r", encoding="utf-8"
@@ -405,8 +411,14 @@ def create_video(output: str):
     """
     logging.info("Creating video...")
 
-    image_files = sorted(glob.glob(os.path.join(output, "slide_*.png")))
-    audio_files = sorted(glob.glob(os.path.join(output, "slide_*.wav")))
+    image_files = sorted(
+        glob.glob(os.path.join(output, "slide_*.png")), key=numerical_sort
+    )
+    audio_files = sorted(
+        glob.glob(os.path.join(output, "slide_*.wav")), key=numerical_sort
+    )
+
+    print(list(zip(image_files, audio_files)))
 
     if len(image_files) != len(audio_files):
         raise ValueError("Number of image and audio files must be the same")
