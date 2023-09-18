@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "slide-gpt"
-version = "0.1.7"
+version = "0.2.0"
 description = "CLI tool for generating slides from text using ChatGPT and DALL-E"
 authors = ["Alex Jercan <jercan_alex27@yahoo.com>"]
 readme = "README.md"

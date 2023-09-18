@@ -5,6 +5,7 @@ import glob
 import json
 import logging
 import os
+import re
 import sys
 import urllib.request
 import wave
@@ -211,7 +212,7 @@ def create_slides(
             )
             image_url = response["data"][0]["url"]
 
-            path = os.path.join(output, f"slide_{index}.png")
+            path = os.path.join(output, f"slide_{index:02d}.png")
             urllib.request.urlretrieve(image_url, path)
 
             progress.set_description(
@@ -247,6 +248,26 @@ def srt_seconds_to_hh_mm_ss_mmm(seconds: float) -> str:
     return result
 
 
+def numerical_sort(filename: str) -> str | int:
+    """Sort the filenames numerically
+
+    Parameters
+    ----------
+    filename : str
+        The filename to sort
+
+    Returns
+    -------
+    str | int
+        The filename as a number if it contains a number, otherwise the filename
+    """
+    match = re.search(r"\d+", filename)
+    if match:
+        return int(match.group())
+
+    return filename
+
+
 def create_srt(output: str):
     """Create the SRT file for the presentation
 
@@ -260,7 +281,9 @@ def create_srt(output: str):
     """
     logging.info("Creating srt...")
 
-    audio_files = sorted(glob.glob(os.path.join(output, "slide_*.wav")))
+    audio_files = sorted(
+        glob.glob(os.path.join(output, "slide_*.wav")), key=numerical_sort
+    )
 
     with open(
         os.path.join(output, "presentation.json"), "r", encoding="utf-8"
