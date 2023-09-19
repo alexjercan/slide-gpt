@@ -195,6 +195,7 @@ def create_slides(
     ) as file:
         file.write(prompt)
 
+    openai.api_key = os.environ["OPENAI_API_KEY"]
     response = openai.ChatCompletion.create(
         model=model,
         messages=[
