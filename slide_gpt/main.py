@@ -19,20 +19,6 @@ from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO)
 
-FK = fakeyou.FakeYou()
-
-try:
-    FK.login(
-        username=os.environ["FAKEYOU_USERNAME"],
-        password=os.environ["FAKEYOU_PASSWORD"],
-    )
-except KeyError:
-    logging.warning("No login credentials found for FakeYou")
-except fakeyou.exception.InvalidCredentials:
-    logging.warning("Invalid login credentials for FakeYou")
-except fakeyou.exception.TooManyRequests:
-    logging.warning("Too many requests for FakeYou")
-
 SYSTEM = """Your job is to create a slide presentation for a video. \
 In this presentation you must include a speech for the current slide and a \
 description for the background image. You need to make it as story-like as \
@@ -63,17 +49,16 @@ something like:
 Make sure to output only JSON text. Do not output any extra comments.
 """
 SPEAKER = "TM:cpwrmn5kwh97"
-VOICES = FK.list_voices()
 
 
 @dataclass
 class Args:
     """Arguments for the pipeline"""
 
-    model: str
-    prompt: str
-    speaker: str
-    output: str
+    model: str = "gpt-3.5-turbo"
+    prompt: str = ""
+    speaker: str = SPEAKER
+    output: str = "videos"
 
 
 def parse_args() -> Args:
@@ -109,9 +94,10 @@ def parse_args() -> Args:
 
     args = parser.parse_args()
 
-    assert args.speaker in VOICES.title, "Invalid speaker"
+    voices = get_voices()
+    assert args.speaker in voices, "Invalid speaker"
 
-    speaker = get_voices().get(args.speaker, SPEAKER)
+    speaker = voices.get(args.speaker, SPEAKER)
     prompt = sys.stdin.read()
 
     return Args(args.model, prompt, speaker, args.output)
@@ -143,6 +129,31 @@ def get_output_run(output: str) -> Tuple[str, str]:
     return run_path, str(run)
 
 
+def create_fk() -> fakeyou.FakeYou:
+    """Create the FakeYou client
+
+    Returns
+    -------
+    fakeyou.FakeYou
+        The FakeYou client
+    """
+    fk_you = fakeyou.FakeYou()
+
+    try:
+        fk_you.login(
+            username=os.environ["FAKEYOU_USERNAME"],
+            password=os.environ["FAKEYOU_PASSWORD"],
+        )
+    except KeyError:
+        logging.warning("No login credentials found for FakeYou")
+    except fakeyou.exception.InvalidCredentials:
+        logging.warning("Invalid login credentials for FakeYou")
+    except fakeyou.exception.TooManyRequests:
+        logging.warning("Too many requests for FakeYou")
+
+    return fk_you
+
+
 def get_voices() -> Dict[str, str]:
     """Get the map of available voices
 
@@ -151,7 +162,8 @@ def get_voices() -> Dict[str, str]:
     Dict[str, str]
         The map of available voices
     """
-    return dict(zip(VOICES.title, VOICES.modelTokens))
+    voices = create_fk().list_voices()
+    return dict(zip(voices.title, voices.modelTokens))
 
 
 def create_slides(
@@ -220,7 +232,7 @@ def create_slides(
             )
 
             path = os.path.join(output, f"slide_{index}.wav")
-            FK.say(slide["text"], speaker).save(path)
+            create_fk().say(slide["text"], speaker).save(path)
 
             progress.update(1)
 
