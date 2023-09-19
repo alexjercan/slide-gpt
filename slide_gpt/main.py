@@ -232,7 +232,7 @@ def create_slides(
                 f"Slide {index}: TTS ({speaker}) '{slide['text']}' ..."
             )
 
-            path = os.path.join(output, f"slide_{index}.wav")
+            path = os.path.join(output, f"slide_{index:02d}.wav")
             create_fk().say(slide["text"], speaker).save(path)
 
             progress.update(1)
