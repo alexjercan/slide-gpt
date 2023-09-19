@@ -133,7 +133,7 @@ def get_output_run(output: str) -> Tuple[str, str]:
     if not os.path.exists(output):
         os.mkdir(output)
 
-    run = 2
+    run = 0
     while os.path.exists(os.path.join(output, str(run))):
         run += 1
 
@@ -225,6 +225,30 @@ def create_slides(
             progress.update(1)
 
 
+def numerical_sort(filename: str) -> str | int:
+    """Sort the filenames numerically
+
+    The filename is of the form "slide_*.wav" where * is a number. This
+    function will extract the number from the filename and use it for sorting.
+
+    Parameters
+    ----------
+    filename : str
+        The filename to sort
+
+    Returns
+    -------
+    str | int
+        The filename as a number if it contains a number, otherwise the name
+    """
+    match = re.search(r"slide_(\d+).*", filename)
+
+    if match:
+        return int(match.group(1))
+
+    return filename
+
+
 def srt_seconds_to_hh_mm_ss_mmm(seconds: float) -> str:
     """Convert seconds to HH:MM:SS,mmm format
 
@@ -246,30 +270,6 @@ def srt_seconds_to_hh_mm_ss_mmm(seconds: float) -> str:
     result = f"{hours:02d}:{minutes:02d}:{r_seconds:02d},{milliseconds:03d}"
 
     return result
-
-
-def numerical_sort(filename: str) -> str | int:
-    """Sort the filenames numerically
-
-    The filename is of the form "slide_*.wav" where * is a number. This
-    function will extract the number from the filename and use it for sorting.
-
-    Parameters
-    ----------
-    filename : str
-        The filename to sort
-
-    Returns
-    -------
-    str | int
-        The filename as a number if it contains a number, otherwise the filename
-    """
-    match = re.search(r"slide_(\d+).*", filename)
-
-    if match:
-        return int(match.group(1))
-
-    return filename
 
 
 def create_srt(output: str):
